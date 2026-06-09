@@ -1,11 +1,22 @@
-import json
+import os
+import requests
+from dotenv import load_dotenv
 
-def load_data(file_path):
-  """ Loads a JSON file """
-  with open(file_path, "r", encoding="utf-8") as handle:
-    return json.load(handle)
+URL = "https://api.api-ninjas.com/v1/animals"
+load_dotenv()
+API_KEY = os.getenv("API_KEY", "")
 
-def serialize_animals(animals):
+def get_animals_from_api(animal_name):
+    parameters = { "name" : animal_name }
+    try:
+        response = requests.get(URL,params=parameters, headers={"X-Api-Key": API_KEY})
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(e)
+        return []
+
+
+def serialize_animals(animals : str):
     """ Serializes animals and their info """
     output = '<li class="cards__item">'
 
@@ -37,6 +48,7 @@ def serialize_animals(animals):
     output += "</li>\n"
     return output
 
+
 def generate_animal_html(data, template_path, output_path):
     """ Generates HTML page for animals """
     output = ""
@@ -62,8 +74,25 @@ def generate_animal_html(data, template_path, output_path):
 
 def main():
     """ Main function """
-    animals_data = load_data("animals_data.json")
-    generate_animal_html(animals_data, "animals_template.html", "animals.html")
+    while True:
+        animal_name = input("Please enter animal's name: ")
+
+        if not animal_name:
+            print("Please enter animal's name")
+            continue
+
+        if not animal_name.isalpha():
+            print("Please enter animal's name")
+            continue
+
+        animals_data = get_animals_from_api(animal_name)
+
+        if not animals_data:
+            print (f"No animals found for {animal_name}")
+            continue
+
+        generate_animal_html(animals_data, "animals_template.html","animals.html")
+        break
 
 if __name__ == "__main__":
     main()
